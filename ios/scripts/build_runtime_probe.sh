@@ -61,7 +61,10 @@ emit_failure_annotation() {
   local summary=""
 
   if [[ -f "$log_file" ]]; then
-    summary="$(grep -E 'CMake Error|error:|fatal error:' "$log_file" | tail -n 1 || true)"
+    summary="$(grep -E 'CMake Error|error:|fatal error:' "$log_file" | grep -v 'too many errors emitted' | head -n 1 || true)"
+    if [[ -z "$summary" ]]; then
+      summary="$(grep -E 'CMake Error|error:|fatal error:' "$log_file" | tail -n 1 || true)"
+    fi
     if [[ -z "$summary" ]]; then
       summary="$(tail -n 1 "$log_file" || true)"
     fi
