@@ -13,8 +13,17 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Xcode preflight
+        run: |
+          echo "PATH=$PATH"
+          ls -1 /Applications | grep -i Xcode || true
+          xcode-select -p || true
+          xcodebuild -version || true
+          xcrun --sdk iphoneos --show-sdk-path || true
+
       - name: Install tools
         run: |
+          export PATH=/opt/homebrew/bin:$PATH
           if ! command -v ldid >/dev/null 2>&1; then
             brew install ldid
           fi
