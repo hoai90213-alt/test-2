@@ -15,6 +15,12 @@
 #include "dynarec_arm64_functions.h"
 #include "dynarec_native.h"
 
+#if defined(__APPLE__)
+#define ARM64_UC_MCONTEXT(pctx) ((pctx)->uc_mcontext)
+#else
+#define ARM64_UC_MCONTEXT(pctx) (&((pctx)->uc_mcontext))
+#endif
+
 //order might be important, so define SUPER for the right one
 #define SUPER() \
     GO(flags)   \
@@ -307,26 +313,26 @@ void adjust_arch(dynablock_t* db, x64emu_t* emu, ucontext_t* p, uintptr_t x64pc)
             //return;
         }
         if(flags->nf) {
-            CONDITIONAL_SET_FLAG(p->uc_mcontext.pstate&(1<<NZCV_N), F_SF);
+            CONDITIONAL_SET_FLAG(ARM64_UC_MCONTEXT(p)->pstate&(1<<NZCV_N), F_SF);
         }
         if(flags->vf) {
-            CONDITIONAL_SET_FLAG(p->uc_mcontext.pstate&(1<<NZCV_V), F_OF);
+            CONDITIONAL_SET_FLAG(ARM64_UC_MCONTEXT(p)->pstate&(1<<NZCV_V), F_OF);
         }
         if(flags->eq) {
-            CONDITIONAL_SET_FLAG(p->uc_mcontext.pstate&(1<<NZCV_Z), F_ZF);
+            CONDITIONAL_SET_FLAG(ARM64_UC_MCONTEXT(p)->pstate&(1<<NZCV_Z), F_ZF);
         }
         if(flags->cf) {
             if(flags->inv_cf) {
-                CONDITIONAL_SET_FLAG((p->uc_mcontext.pstate&(1<<NZCV_C))==0, F_CF);
+                CONDITIONAL_SET_FLAG((ARM64_UC_MCONTEXT(p)->pstate&(1<<NZCV_C))==0, F_CF);
             } else {
-                CONDITIONAL_SET_FLAG(p->uc_mcontext.pstate&(1<<NZCV_C), F_CF);
+                CONDITIONAL_SET_FLAG(ARM64_UC_MCONTEXT(p)->pstate&(1<<NZCV_C), F_CF);
             }
         }
     }
     struct fpsimd_context *fpsimd = NULL;
     // find fpsimd struct
     {
-        struct _aarch64_ctx * ff = (struct _aarch64_ctx*)p->uc_mcontext.__reserved;
+        struct _aarch64_ctx * ff = (struct _aarch64_ctx*)ARM64_UC_MCONTEXT(p)->__reserved;
         while (ff->magic && !fpsimd) {
             if(ff->magic==FPSIMD_MAGIC)
                 fpsimd = (struct fpsimd_context*)ff;
