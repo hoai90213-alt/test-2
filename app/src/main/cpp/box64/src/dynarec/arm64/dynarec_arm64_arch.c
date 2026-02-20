@@ -344,6 +344,21 @@ void adjust_arch(dynablock_t* db, x64emu_t* emu, ucontext_t* p, uintptr_t x64pc)
         }
     }
 #endif
+
+#if defined(__APPLE__)
+#define FPSIMD_VREG128(idx) (0)
+#define FPSIMD_VREG64(idx) (0ULL)
+#define FPSIMD_VREG_F32(idx) (0.0f)
+#define FPSIMD_VREG_I64(idx) (0LL)
+#define FPSIMD_VREG_F64(idx) (0.0)
+#else
+#define FPSIMD_VREG128(idx) (fpsimd->vregs[idx])
+#define FPSIMD_VREG64(idx) ((uint64_t)(fpsimd->vregs[idx]))
+#define FPSIMD_VREG_F32(idx) (*(float*)&fpsimd->vregs[idx])
+#define FPSIMD_VREG_I64(idx) (*(int64_t*)&fpsimd->vregs[idx])
+#define FPSIMD_VREG_F64(idx) (*(double*)&fpsimd->vregs[idx])
+#endif
+
     if(sse) {
         dynarec_log_prefix(0, LOG_INFO, " sse[%x (fpsimd=%p)] ", sse->sse, fpsimd);
         for(int i=0; i<16; ++i)
@@ -354,7 +369,7 @@ void adjust_arch(dynablock_t* db, x64emu_t* emu, ucontext_t* p, uintptr_t x64pc)
                 } else {
                     idx = XMM0 + i;
                 }
-                emu->xmm[i].u128 = fpsimd->vregs[idx];
+                emu->xmm[i].u128 = FPSIMD_VREG128(idx);
             }
     }
     if(ymm) {
@@ -367,7 +382,7 @@ void adjust_arch(dynablock_t* db, x64emu_t* emu, ucontext_t* p, uintptr_t x64pc)
                 } else {
                     idx = EMM0 + i;
                 }
-                emu->ymm[i].u128 = fpsimd->vregs[idx];
+                emu->ymm[i].u128 = FPSIMD_VREG128(idx);
             }
             if(ymm->ymm0&(1<<i))
                 emu->ymm[i].u128 = 0;
@@ -378,7 +393,7 @@ void adjust_arch(dynablock_t* db, x64emu_t* emu, ucontext_t* p, uintptr_t x64pc)
         for(int i=0; i<8; ++i)
             if(fpsimd && (mmx->mmx>>i)&1) {
                 int idx = EMM0 + i;
-                emu->mmx[i].q = fpsimd->vregs[idx]&0xffffffffffffffffLL;
+                emu->mmx[i].q = FPSIMD_VREG64(idx)&0xffffffffffffffffLL;
             }
     }
     if(x87) {
@@ -390,19 +405,25 @@ void adjust_arch(dynablock_t* db, x64emu_t* emu, ucontext_t* p, uintptr_t x64pc)
                 int t = (x87->x87_type>>(i*2))&0x3;
                 switch (t) {
                     case X87_ST_F:
-                        emu->x87[(emu->top+i)&7].d = *(float*)&fpsimd->vregs[idx];
+                        emu->x87[(emu->top+i)&7].d = FPSIMD_VREG_F32(idx);
                         break;
                     case X87_ST_I64:
-                        emu->x87[(emu->top+i)&7].d = *(int64_t*)&fpsimd->vregs[idx];
+                        emu->x87[(emu->top+i)&7].d = FPSIMD_VREG_I64(idx);
                         break;
                     case X87_ST_D:
-                        emu->x87[(emu->top+i)&7].d = *(double*)&fpsimd->vregs[idx];
+                        emu->x87[(emu->top+i)&7].d = FPSIMD_VREG_F64(idx);
                         break;
                 }
             }
         }
     }
     dynarec_log_prefix(0, LOG_INFO, "\n");
+
+#undef FPSIMD_VREG128
+#undef FPSIMD_VREG64
+#undef FPSIMD_VREG_F32
+#undef FPSIMD_VREG_I64
+#undef FPSIMD_VREG_F64
 }
 
 int arch_unaligned(dynablock_t* db, uintptr_t x64pc)
