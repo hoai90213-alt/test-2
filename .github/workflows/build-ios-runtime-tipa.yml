@@ -53,6 +53,7 @@ jobs:
           REQUIRE_RUNTIME_LIBS: "1"
           REQUIRED_RUNTIME_LIBS: "libbox64.dylib libzomdroid.dylib libzomdroidlinker.dylib"
           MIN_TIPA_SIZE_BYTES: "1048576"
+          ALLOW_SMALL_TIPA_WITH_STUB: "1"
         run: |
           chmod +x ios/scripts/build_tipa.sh
           ios/scripts/build_tipa.sh

@@ -83,4 +83,5 @@ git submodule update --init --recursive
 - Workflow nay se:
   - build native runtime probe (cmake iOS),
   - dong goi runtime libs vao app theo che do strict,
+  - neu bat buoc fallback sang stub runtime thi van co the dong goi `.tipa` nho de debug nhanh,
   - upload log + runtime libs + `.tipa` de debug.

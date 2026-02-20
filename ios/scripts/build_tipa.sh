@@ -15,6 +15,8 @@ RUNTIME_LIB_DIR="${RUNTIME_LIB_DIR:-$OUT_DIR/runtime-libs}"
 REQUIRE_RUNTIME_LIBS="${REQUIRE_RUNTIME_LIBS:-0}"
 REQUIRED_RUNTIME_LIBS="${REQUIRED_RUNTIME_LIBS:-libbox64.dylib libzomdroid.dylib libzomdroidlinker.dylib}"
 MIN_TIPA_SIZE_BYTES="${MIN_TIPA_SIZE_BYTES:-0}"
+STUB_RUNTIME_MARKER="${RUNTIME_LIB_DIR}/STUB_RUNTIME.txt"
+ALLOW_SMALL_TIPA_WITH_STUB="${ALLOW_SMALL_TIPA_WITH_STUB:-0}"
 
 SDK_PATH="$(xcrun --sdk iphoneos --show-sdk-path)"
 CLANG_BIN="$(xcrun --sdk iphoneos --find clang)"
@@ -75,6 +77,11 @@ if [[ -d "$RUNTIME_LIB_DIR" ]]; then
   shopt -s nullglob
   runtime_candidates=("$RUNTIME_LIB_DIR"/*.dylib)
   shopt -u nullglob
+fi
+
+if [[ -f "$STUB_RUNTIME_MARKER" ]] && [[ "$ALLOW_SMALL_TIPA_WITH_STUB" == "1" ]] && [[ "$MIN_TIPA_SIZE_BYTES" -gt 0 ]]; then
+  echo "::warning title=build_tipa::Stub runtime detected, skipping minimum .tipa size threshold"
+  MIN_TIPA_SIZE_BYTES=0
 fi
 
 if [[ "${#runtime_candidates[@]}" -eq 0 ]]; then

@@ -18,25 +18,29 @@
 #define LOGE(...) ZD_PICK(__VA_ARGS__, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_1)(__VA_ARGS__)
 
 #define LOGW_1(msg) _LOG(ANDROID_LOG_WARN, "%s", (msg))
-#define LOGW_N(fmt, ...) _LOG(ANDROID_LOG_WARN, (fmt), __VA_ARGS__)
+#define LOGW_N(fmt, ...) _LOG(ANDROID_LOG_WARN, fmt, __VA_ARGS__)
 #define LOGW(...) ZD_PICK(__VA_ARGS__, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_1)(__VA_ARGS__)
 
 #define LOGI_1(msg) _LOG(ANDROID_LOG_INFO, "%s", (msg))
-#define LOGI_N(fmt, ...) _LOG(ANDROID_LOG_INFO, (fmt), __VA_ARGS__)
+#define LOGI_N(fmt, ...) _LOG(ANDROID_LOG_INFO, fmt, __VA_ARGS__)
 #define LOGI(...) ZD_PICK(__VA_ARGS__, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_1)(__VA_ARGS__)
 
 #define LOGD_1(msg) _LOG(ANDROID_LOG_DEBUG, "%s", (msg))
-#define LOGD_N(fmt, ...) _LOG(ANDROID_LOG_DEBUG, (fmt), __VA_ARGS__)
+#define LOGD_N(fmt, ...) _LOG(ANDROID_LOG_DEBUG, fmt, __VA_ARGS__)
 #define LOGD(...) ZD_PICK(__VA_ARGS__, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_1)(__VA_ARGS__)
 
 #define LOGV_1(msg) _LOG(ANDROID_LOG_VERBOSE, "%s", (msg))
-#define LOGV_N(fmt, ...) _LOG(ANDROID_LOG_VERBOSE, (fmt), __VA_ARGS__)
+#define LOGV_N(fmt, ...) _LOG(ANDROID_LOG_VERBOSE, fmt, __VA_ARGS__)
 #define LOGV(...) ZD_PICK(__VA_ARGS__, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_1)(__VA_ARGS__)
 #else
 #include <stdio.h>
 
 #define _LOG(level, fmt, ...) \
-  ((void)fprintf(stderr, "[%s] " level ": " fmt "\n", (LOG_TAG), __VA_ARGS__))
+  do { \
+    fprintf(stderr, "[%s] %s: ", (LOG_TAG), (level)); \
+    fprintf(stderr, (fmt), __VA_ARGS__); \
+    fputc('\n', stderr); \
+  } while (0)
 
 #define ZD_PICK(_1, _2, _3, _4, _5, _6, _7, _8, NAME, ...) NAME
 
@@ -49,19 +53,19 @@
 #define LOGE(...) ZD_PICK(__VA_ARGS__, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_N, LOGE_1)(__VA_ARGS__)
 
 #define LOGW_1(msg) _LOG("WARN", "%s", (msg))
-#define LOGW_N(fmt, ...) _LOG("WARN", (fmt), __VA_ARGS__)
+#define LOGW_N(fmt, ...) _LOG("WARN", fmt, __VA_ARGS__)
 #define LOGW(...) ZD_PICK(__VA_ARGS__, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_N, LOGW_1)(__VA_ARGS__)
 
 #define LOGI_1(msg) _LOG("INFO", "%s", (msg))
-#define LOGI_N(fmt, ...) _LOG("INFO", (fmt), __VA_ARGS__)
+#define LOGI_N(fmt, ...) _LOG("INFO", fmt, __VA_ARGS__)
 #define LOGI(...) ZD_PICK(__VA_ARGS__, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_N, LOGI_1)(__VA_ARGS__)
 
 #define LOGD_1(msg) _LOG("DEBUG", "%s", (msg))
-#define LOGD_N(fmt, ...) _LOG("DEBUG", (fmt), __VA_ARGS__)
+#define LOGD_N(fmt, ...) _LOG("DEBUG", fmt, __VA_ARGS__)
 #define LOGD(...) ZD_PICK(__VA_ARGS__, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_N, LOGD_1)(__VA_ARGS__)
 
 #define LOGV_1(msg) _LOG("VERBOSE", "%s", (msg))
-#define LOGV_N(fmt, ...) _LOG("VERBOSE", (fmt), __VA_ARGS__)
+#define LOGV_N(fmt, ...) _LOG("VERBOSE", fmt, __VA_ARGS__)
 #define LOGV(...) ZD_PICK(__VA_ARGS__, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_N, LOGV_1)(__VA_ARGS__)
 #endif
 
