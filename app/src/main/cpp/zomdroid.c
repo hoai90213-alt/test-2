@@ -442,7 +442,14 @@ void zomdroid_start_game(const char* game_dir_path, const char* library_dir_path
 
     // we handle abort, jvm handles segfault, clear other handlers possibly set by box64
     struct sigaction sa = { 0 };
-    for(int sig = SIGHUP; sig < NSIG; sig++) {
+#if defined(NSIG)
+    const int max_sig = NSIG;
+#elif defined(_NSIG)
+    const int max_sig = _NSIG;
+#else
+    const int max_sig = 64;
+#endif
+    for(int sig = SIGHUP; sig < max_sig; sig++) {
         if(sig == SIGSEGV) sa.sa_handler = SIG_IGN;
         else if(sig == SIGABRT) continue;
         else sa.sa_handler = SIG_DFL;
