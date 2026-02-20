@@ -6,12 +6,18 @@
 .text
 .align 4
 
-.extern LinkNext
+#if defined(__APPLE__)
+#define ASM_SYM(name) _##name
+#else
+#define ASM_SYM(name) name
+#endif
 
-.global arm64_next
+.extern ASM_SYM(LinkNext)
+
+.global ASM_SYM(arm64_next)
 
     .8byte  0   // NULL pointer before arm64_next, for getDB
-arm64_next:
+ASM_SYM(arm64_next):
     // emu is r0
     // IP address is r1
     sub     sp,  sp,  (8 * 12)
@@ -25,7 +31,7 @@ arm64_next:
     mov     x2, x30      // "from" is in lr, so put in x2
     add     x3, sp, 8*11    // x3 is address to change rip
     // call the function
-    bl      LinkNext
+    bl      ASM_SYM(LinkNext)
     // preserve return value
     mov     x3, x0
     // pop regs
@@ -38,4 +44,6 @@ arm64_next:
     add     sp,  sp, (8 * 12)
     // return offset is jump address
     br      x3
+
+#undef ASM_SYM
 
