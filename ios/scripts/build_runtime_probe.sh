@@ -18,6 +18,7 @@ ARM64="${ARM64:-ON}"
 REQUIRED_RUNTIME_LIBS="${REQUIRED_RUNTIME_LIBS:-libbox64.dylib libzomdroid.dylib libzomdroidlinker.dylib}"
 CURRENT_BUILD_MODE=""
 ALLOW_STUB_RUNTIME_LIBS="${ALLOW_STUB_RUNTIME_LIBS:-1}"
+XOPEN_COMPAT_CFLAG="${XOPEN_COMPAT_CFLAG:--D_XOPEN_SOURCE=700}"
 export PATH="/opt/homebrew/bin:/opt/procursus/bin:$PATH"
 
 mkdir -p "$OUT_DIR" "$RUNTIME_OUT_DIR"
@@ -101,6 +102,8 @@ run_build_mode() {
         -DCMAKE_SYSTEM_NAME=iOS
         -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
         -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+        -DCMAKE_C_FLAGS="$XOPEN_COMPAT_CFLAG"
+        -DCMAKE_CXX_FLAGS="$XOPEN_COMPAT_CFLAG"
       )
       ;;
     amethyst-darwin)
@@ -110,8 +113,8 @@ run_build_mode() {
         -DCMAKE_CROSSCOMPILING=true
         -DCMAKE_SYSTEM_NAME=Darwin
         -DCMAKE_SYSTEM_PROCESSOR=aarch64
-        -DCMAKE_C_FLAGS=-arch\ arm64
-        -DCMAKE_CXX_FLAGS=-arch\ arm64
+        -DCMAKE_C_FLAGS="-arch arm64 $XOPEN_COMPAT_CFLAG"
+        -DCMAKE_CXX_FLAGS="-arch arm64 $XOPEN_COMPAT_CFLAG"
       )
       ;;
     *)
@@ -206,6 +209,7 @@ EOF
   echo "[runtime_probe] ZOMDROID_BUILD_GLFW=$ZOMDROID_BUILD_GLFW"
   echo "[runtime_probe] ZOMDROID_BUILD_LINKER=$ZOMDROID_BUILD_LINKER"
   echo "[runtime_probe] ZOMDROID_BUILD_ANDROID_JNI=$ZOMDROID_BUILD_ANDROID_JNI"
+  echo "[runtime_probe] XOPEN_COMPAT_CFLAG=$XOPEN_COMPAT_CFLAG"
   echo "[runtime_probe] cmake path: $(command -v cmake || echo '<missing>')"
   echo "[runtime_probe] ldid path: $(command -v ldid || echo '<missing>')"
   echo "[runtime_probe] xcode-select -p: $(xcode-select -p || true)"
