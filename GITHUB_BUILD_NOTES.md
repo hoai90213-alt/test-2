@@ -76,7 +76,7 @@ git submodule update --init --recursive
     - `ios-xcode` (mode chinh),
     - `amethyst-darwin` (fallback theo huong build cua Amethyst),
   - fail neu thieu `libbox64.dylib`, `libzomdroid.dylib`, `libzomdroidlinker.dylib`,
-  - fail neu `.tipa` qua nho (chan artifact kieu "10KB").
+  - neu runtime that bai va phai dung stub thi workflow cho phep `.tipa` nho de build pass va tiep tuc debug.
 
 2. Build runtime probe + runtime `.tipa` (manual debug):
 - Action: `build-ios-runtime-tipa`
