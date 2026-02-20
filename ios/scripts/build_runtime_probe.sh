@@ -53,11 +53,34 @@ cmake_build_targets() {
   printf '%s\n' "${targets[@]}"
 }
 
+emit_failure_annotation() {
+  local title="$1"
+  local log_file="$2"
+  local summary=""
+
+  if [[ -f "$log_file" ]]; then
+    summary="$(grep -E 'CMake Error|error:|fatal error:' "$log_file" | tail -n 1 || true)"
+    if [[ -z "$summary" ]]; then
+      summary="$(tail -n 1 "$log_file" || true)"
+    fi
+  fi
+
+  summary="${summary//$'\r'/ }"
+  summary="${summary//$'\n'/ }"
+  if [[ -z "$summary" ]]; then
+    summary="See runtime-probe-build.log artifact for details"
+  fi
+
+  echo "::error title=runtime_probe::$title::$summary"
+}
+
 run_build_mode() {
   local mode="$1"
   local sdk_path="$2"
   local -a mode_args=()
   local -a build_targets=()
+  local configure_log="$OUT_DIR/runtime-probe-${mode}-configure.log"
+  local build_log="$OUT_DIR/runtime-probe-${mode}-build.log"
   local target
 
   while IFS= read -r target; do
@@ -109,8 +132,9 @@ run_build_mode() {
       -DZOMDROID_BUILD_ANDROID_JNI="$ZOMDROID_BUILD_ANDROID_JNI" \
       -DZOMDROID_BUILD_LINKER="$ZOMDROID_BUILD_LINKER" \
       -DARM_DYNAREC="$ARM_DYNAREC" \
-      -DARM64="$ARM64"; then
-    echo "::error title=runtime_probe::$mode cmake configure failed"
+      -DARM64="$ARM64" >"$configure_log" 2>&1; then
+    cat "$configure_log"
+    emit_failure_annotation "$mode cmake configure failed" "$configure_log"
     return 1
   fi
 
@@ -118,10 +142,13 @@ run_build_mode() {
   if ! cmake --build "$BUILD_DIR" \
       --config "$BUILD_CONFIG" \
       --target "${build_targets[@]}" \
-      --parallel "$(sysctl -n hw.logicalcpu)"; then
-    echo "::error title=runtime_probe::$mode cmake build failed"
+      --parallel "$(sysctl -n hw.logicalcpu)" >"$build_log" 2>&1; then
+    cat "$build_log"
+    emit_failure_annotation "$mode cmake build failed" "$build_log"
     return 1
   fi
+
+  cat "$build_log"
 }
 
 {
