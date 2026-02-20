@@ -30,6 +30,8 @@
 
 #include "modrm.h"
 
+extern int isnanf(float);
+
 #ifdef TEST_INTERPRETER
 uintptr_t Test0F(x64test_t *test, rex_t rex, uintptr_t addr, int *step)
 #else

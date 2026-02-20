@@ -30,6 +30,8 @@
 
 #include "modrm.h"
 
+extern int isnanf(float);
+
 #ifdef TEST_INTERPRETER
 uintptr_t TestAVX_660F(x64test_t *test, vex_t vex, uintptr_t addr, int *step)
 #else

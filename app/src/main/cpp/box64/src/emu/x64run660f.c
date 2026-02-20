@@ -28,6 +28,8 @@
 #include "modrm.h"
 #include "x64compstrings.h"
 
+extern int isnanf(float);
+
 static uint8_t ff_mult(uint8_t a, uint8_t b)
 {
     int retval = 0;
