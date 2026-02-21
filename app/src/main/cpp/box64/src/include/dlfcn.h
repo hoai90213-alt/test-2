@@ -32,6 +32,15 @@ static inline int dladdr(const void* addr, Dl_info* info)
     errno = ENOSYS;
     return 0;
 }
+
+#ifndef __BOX64_DLVSYM_DEFINED
+#define __BOX64_DLVSYM_DEFINED 1
+static inline void* dlvsym(void* handle, const char* symbol, const char* version)
+{
+    (void)version;
+    return dlsym(handle, symbol);
+}
+#endif
 #endif
 
 #endif
