@@ -22,7 +22,7 @@ extract_one() {
     *.tar.xz|*.txz|*.tar.gz|*.tgz|*.tar.bz2|*.tbz2|*.tar)
       tar -xf "$src" -C "$dst"
       ;;
-    *.zip)
+    *.zip|*.ipa|*.tipa)
       unzip -q "$src" -d "$dst"
       ;;
     *)
@@ -55,7 +55,10 @@ if [[ -d "$WORK_DIR/raw" ]]; then
 fi
 maybe_extract_tree "$WORK_DIR" || true
 
-mapfile -d '' JVM_LIST < <(find "$WORK_DIR" -type f -name "libjvm.dylib" -print0 || true)
+JVM_LIST=()
+while IFS= read -r -d '' candidate; do
+  JVM_LIST+=("$candidate")
+done < <(find "$WORK_DIR" -type f -name "libjvm.dylib" -print0 || true)
 if [[ "${#JVM_LIST[@]}" -eq 0 ]]; then
   echo "[prepare_runtime] ERROR: no libjvm.dylib found under $WORK_DIR"
   exit 1

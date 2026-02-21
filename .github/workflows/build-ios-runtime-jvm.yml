@@ -47,6 +47,38 @@ jobs:
           name: jre8-ios-aarch64
           path: depends/jre8
 
+      - name: Download latest Amethyst IPA (fallback runtime source)
+        continue-on-error: true
+        run: |
+          mkdir -p depends/amethyst
+          python3 - << 'PY'
+          import json
+          import os
+          import urllib.request
+
+          api = "https://api.github.com/repos/AngelAuraMC/Amethyst-iOS/releases/latest"
+          with urllib.request.urlopen(api) as r:
+              data = json.load(r)
+
+          assets = data.get("assets", [])
+          chosen = None
+          for a in assets:
+              name = (a.get("name") or "").lower()
+              if name.endswith(".ipa") or name.endswith(".tipa"):
+                  chosen = a
+                  break
+
+          if not chosen:
+              print("No IPA/TIPA asset found in latest Amethyst release")
+              raise SystemExit(0)
+
+          url = chosen.get("browser_download_url")
+          out = os.path.join("depends", "amethyst", chosen.get("name") or "amethyst.ipa")
+          print(f"Downloading {url} -> {out}")
+          with urllib.request.urlopen(url) as r, open(out, "wb") as f:
+              f.write(r.read())
+          PY
+
       - name: Prepare runtime import bundle
         run: |
           chmod +x ios/scripts/prepare_ios_runtime_import.sh
