@@ -19,6 +19,10 @@
 #ifndef MAP_GROWSDOWN
 #define MAP_GROWSDOWN 0
 #endif
+
+#ifndef mmap64
+#define mmap64 mmap
+#endif
 #endif
 
 #endif
