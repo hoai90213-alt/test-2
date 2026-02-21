@@ -38,7 +38,11 @@
 typedef void (*vFppp_t)(void*, void*, void*);
 typedef void (*vFpi_t)(void*, int);
 typedef int (*iFppip_t)(void*, void*, int, void*);
+#if defined(__APPLE__)
+typedef int (*iFli_t)(pthread_t, int);
+#else
 typedef int (*iFli_t)(long unsigned int, int);
+#endif
 
 static vFppp_t real_pthread_cleanup_push_defer = NULL;
 static vFpi_t real_pthread_cleanup_pop_restore = NULL;
