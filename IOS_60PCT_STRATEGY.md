@@ -12,6 +12,12 @@ This folder is a separate branch-style project focused on raising local iOS succ
 3. `Import Runtime Folder`
 4. `Launch Runtime`
 
+### Runtime workflow (GitHub Actions)
+1. Run workflow: `build-ios-runtime-jvm`
+2. Download artifact: `zomdroid-ios-runtime-import`
+3. Extract `runtime-import.zip` to get folder `runtime/`
+4. In app, use `Import Runtime Folder` and select this `runtime/`
+
 ### Required runtime format
 - Runtime folder must contain one of:
   - `lib/server/libjvm.dylib`

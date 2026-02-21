@@ -1,0 +1,68 @@
+name: build-ios-runtime-jvm
+
+on:
+  workflow_dispatch:
+
+jobs:
+  prepare-runtime:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download JRE17 iOS artifact
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: PojavLauncherTeam/android-openjdk-build-multiarch
+          workflow: build.yml
+          workflow_conclusion: success
+          branch: buildjre17-21
+          name: jre17-ios-aarch64
+          path: depends/jre17
+
+      - name: Download JRE21 iOS artifact
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: PojavLauncherTeam/android-openjdk-build-multiarch
+          workflow: build.yml
+          workflow_conclusion: completed
+          branch: buildjre17-21
+          name: jre21-ios-aarch64
+          path: depends/jre21
+
+      - name: Download JRE8 iOS artifact
+        continue-on-error: true
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          repo: PojavLauncherTeam/android-openjdk-build-multiarch
+          workflow: build.yml
+          workflow_conclusion: success
+          branch: buildjre8
+          name: jre8-ios-aarch64
+          path: depends/jre8
+
+      - name: Prepare runtime import bundle
+        run: |
+          chmod +x ios/scripts/prepare_ios_runtime_import.sh
+          ios/scripts/prepare_ios_runtime_import.sh
+
+      - name: Upload runtime import zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: zomdroid-ios-runtime-import
+          path: artifacts/runtime-import/runtime-import.zip
+          if-no-files-found: error
+
+      - name: Upload runtime summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zomdroid-ios-runtime-summary
+          path: artifacts/runtime-import/runtime-summary.txt
+          if-no-files-found: warn
