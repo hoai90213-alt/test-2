@@ -7,6 +7,10 @@
 #include <sys/mman.h>
 #include <dlfcn.h>
 #include <malloc.h>
+#if defined(__APPLE__)
+#include <malloc/malloc.h>
+#include <unistd.h>
+#endif
 
 #ifdef malloc_usable_size
 #undef malloc_usable_size
@@ -19,6 +23,53 @@
 #include "elfs/elfloader_private.h"
 #include "custommem.h"
 #include "symbols.h"
+
+#if defined(__APPLE__)
+static inline malloc_zone_t* box64_apple_default_zone(void)
+{
+    return malloc_default_zone();
+}
+
+EXPORT void* __libc_malloc(size_t size)
+{
+    return malloc_zone_malloc(box64_apple_default_zone(), size);
+}
+
+EXPORT void* __libc_realloc(void* ptr, size_t size)
+{
+    return malloc_zone_realloc(box64_apple_default_zone(), ptr, size);
+}
+
+EXPORT void* __libc_calloc(size_t nmemb, size_t size)
+{
+    return malloc_zone_calloc(box64_apple_default_zone(), nmemb, size);
+}
+
+EXPORT void __libc_free(void* ptr)
+{
+    if (ptr)
+        malloc_zone_free(box64_apple_default_zone(), ptr);
+}
+
+EXPORT void* __libc_memalign(size_t align, size_t size)
+{
+    if (align < sizeof(void*))
+        align = sizeof(void*);
+    return malloc_zone_memalign(box64_apple_default_zone(), align, size);
+}
+
+EXPORT void* __libc_valloc(size_t size)
+{
+    return __libc_memalign((size_t)getpagesize(), size);
+}
+
+EXPORT void* __libc_pvalloc(size_t size)
+{
+    size_t pagesize = (size_t)getpagesize();
+    size_t rounded = (size + pagesize - 1) & ~(pagesize - 1);
+    return __libc_memalign(pagesize, rounded);
+}
+#endif
 
 /*
     This file here is for handling overriding of malloc functions
@@ -984,7 +1035,11 @@ EXPORT int my___RML_open_factory(void* factory, void* server_version, int client
 }
 
 void init_malloc_hook() {
+    #if defined(__APPLE__)
+    box_malloc_usable_size = (size_t(*)(void*))malloc_size;
+    #else
     box_malloc_usable_size = dlsym(RTLD_NEXT, "malloc_usable_size");
+    #endif
     #if 0
     #define GO(A, B)
     #define GO2(A, B)   box_##A = (B##_t)dlsym(RTLD_NEXT, #A); if(box_##A == (B##_t)A) box_##A = NULL;
