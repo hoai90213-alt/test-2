@@ -2363,7 +2363,12 @@ int EXPORT my_syscall_rt_sigaction(x64emu_t* emu, int signum, const x64_sigactio
             memcpy(&old.sa_mask, &oldact->sa_mask, (sigsetsize>16)?16:sigsetsize);
         }
 
-        int ret = syscall(__NR_rt_sigaction, signum, act?&newact:NULL, oldact?&old:NULL, (sigsetsize>16)?16:sigsetsize);
+        int ret = -1;
+#if defined(__APPLE__)
+        errno = ENOSYS;
+#else
+        ret = syscall(__NR_rt_sigaction, signum, act?&newact:NULL, oldact?&old:NULL, (sigsetsize>16)?16:sigsetsize);
+#endif
         if(oldact && ret==0) {
             oldact->sa_flags = old.sa_flags;
             memcpy(&oldact->sa_mask, &old.sa_mask, (sigsetsize>16)?16:sigsetsize);
