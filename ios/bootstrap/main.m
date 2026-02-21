@@ -65,6 +65,38 @@ static void ZDEnsureDirectory(NSString* path) {
                                                   error:nil];
 }
 
+static void ZDWriteFileIfMissing(NSString* path, NSString* content) {
+  if (ZDFileExists(path)) {
+    return;
+  }
+  [content writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil];
+}
+
+static void ZDEnsureFilesystemLayout(void) {
+  NSString* basePath = ZDBasePath();
+  NSString* gamePath = ZDGamePath();
+  NSString* depsPath = ZDDepsPath();
+  NSString* configPath = ZDConfigPath();
+  NSString* homePath = [basePath stringByAppendingPathComponent:@"home"];
+  NSString* cachePath = [basePath stringByAppendingPathComponent:@"cache"];
+  NSString* jarsPath = [depsPath stringByAppendingPathComponent:@"jars"];
+
+  ZDEnsureDirectory(basePath);
+  ZDEnsureDirectory(gamePath);
+  ZDEnsureDirectory(depsPath);
+  ZDEnsureDirectory(configPath);
+  ZDEnsureDirectory(homePath);
+  ZDEnsureDirectory(cachePath);
+  ZDEnsureDirectory(jarsPath);
+
+  NSString* readmePath = [basePath stringByAppendingPathComponent:@"README.txt"];
+  NSString* readmeText =
+      @"Copy game files to ./game\n"
+      "Copy dependencies to ./deps (jre, libs, jars)\n"
+      "Optional config files in ./config: main_class.txt, jvm_args.txt, app_args.txt\n";
+  ZDWriteFileIfMissing(readmePath, readmeText);
+}
+
 static NSArray<NSString*>* ZDReadLines(NSString* path) {
   if (!ZDFileExists(path)) {
     return @[];
@@ -193,6 +225,8 @@ static NSString* ZDProbeRuntimeLibraries(void) {
 static NSString* ZDPrepareAndLaunchRuntime(void) {
   NSMutableArray<NSString*>* lines = [NSMutableArray array];
 
+  ZDEnsureFilesystemLayout();
+
   NSString* frameworksPath = ZDFrameworksPath();
   NSString* gamePath = ZDGamePath();
   NSString* depsPath = ZDDepsPath();
@@ -209,10 +243,6 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
                                  linuxLibPath,
                                  [depsPath stringByAppendingPathComponent:@"jre/lib"],
                                  [depsPath stringByAppendingPathComponent:@"jre/lib/server"]];
-
-  ZDEnsureDirectory(homePath);
-  ZDEnsureDirectory(cachePath);
-  ZDEnsureDirectory(configPath);
 
   NSArray<NSString*>* requiredLibraries = @[
     @"libbox64.dylib",
@@ -433,6 +463,7 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   ]];
 
   NSString* runtimeStatus = ZDProbeRuntimeLibraries();
+  ZDEnsureFilesystemLayout();
   NSString* intro = [NSString stringWithFormat:
                      @"Runtime probe:\n%@\n\nExpected paths:\n- %@\n- %@\n- %@",
                      runtimeStatus,
