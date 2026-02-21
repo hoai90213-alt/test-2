@@ -3239,6 +3239,15 @@ EXPORT void* my_mmap(x64emu_t* emu, void *addr, size_t length, int prot, int fla
 EXPORT void* my_mremap(x64emu_t* emu, void* old_addr, size_t old_size, size_t new_size, int flags, void* new_addr)
 {
     (void)emu;
+#if defined(__APPLE__)
+    (void)old_addr;
+    (void)old_size;
+    (void)new_size;
+    (void)flags;
+    (void)new_addr;
+    errno = ENOSYS;
+    return (void*)-1;
+#else
     if((emu || box64_is32bits) && (BOX64ENV(log)>=LOG_DEBUG || BOX64ENV(dynarec_log)>=LOG_DEBUG)) {printf_log(LOG_NONE, "mremap(%p, %lu, %lu, %d, %p)=>", old_addr, old_size, new_size, flags, new_addr);}
     void* ret = mremap(old_addr, old_size, new_size, flags, new_addr);
     if((emu || box64_is32bits) && (BOX64ENV(log)>=LOG_DEBUG || BOX64ENV(dynarec_log)>=LOG_DEBUG)) {printf_log(LOG_NONE, "%p\n", ret);}
@@ -3284,6 +3293,7 @@ EXPORT void* my_mremap(x64emu_t* emu, void* old_addr, size_t old_size, size_t ne
         }
     }
     return ret;
+#endif
 }
 
 EXPORT int my_munmap(x64emu_t* emu, void* addr, size_t length)
