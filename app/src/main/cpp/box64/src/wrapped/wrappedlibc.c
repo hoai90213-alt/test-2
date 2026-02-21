@@ -3616,6 +3616,12 @@ union semun {
                               (Linux-specific) */
 };
 #endif
+#ifndef SEM_STAT
+#define SEM_STAT 18
+#endif
+#ifndef SEM_INFO
+#define SEM_INFO 19
+#endif
 #ifndef SEM_STAT_ANY
 #define SEM_STAT_ANY 20
 #endif
