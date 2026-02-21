@@ -66,6 +66,16 @@ typedef struct  va_list {
     int vr_offs; // offset from  vr_top to next FP/SIMD register arg
 } va_list;
 */
+#if defined(__APPLE__)
+#define CREATE_SYSV_VALIST(A) \
+  va_list sysv_varargs = (va_list)(A)
+
+#define CONVERT_VALIST(A) \
+  va_list sysv_varargs = (va_list)((A)->overflow_arg_area)
+
+#define CREATE_VALIST_FROM_VAARG(STACK, SCRATCH, N) \
+  va_list sysv_varargs = (va_list)(STACK)
+#else
 #define CREATE_SYSV_VALIST(A) \
   va_list sysv_varargs; \
   sysv_varargs.__gr_offs=(8*8); \
@@ -93,6 +103,7 @@ typedef struct  va_list {
     p[3]=R_RCX; p[4]=R_R8; p[5]=R_R9;                                   \
     memcpy(&p[6], emu->xmm, 8*16);                                      \
   }
+#endif
 
 #define PREFER_CONVERT_VAARG
 
