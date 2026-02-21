@@ -34,6 +34,7 @@ typedef NS_ENUM(NSInteger, ZDImportTarget) {
   ZDImportTargetNone = 0,
   ZDImportTargetGame = 1,
   ZDImportTargetDeps = 2,
+  ZDImportTargetRuntime = 3,
 };
 
 static NSString* ZDFrameworksPath(void) {
@@ -61,6 +62,10 @@ static NSString* ZDConfigPath(void) {
   return [ZDBasePath() stringByAppendingPathComponent:@"config"];
 }
 
+static NSString* ZDRuntimePath(void) {
+  return [ZDBasePath() stringByAppendingPathComponent:@"runtime"];
+}
+
 static BOOL ZDFileExists(NSString* path) {
   return [[NSFileManager defaultManager] fileExistsAtPath:path];
 }
@@ -83,6 +88,7 @@ static void ZDEnsureFilesystemLayout(void) {
   NSString* basePath = ZDBasePath();
   NSString* gamePath = ZDGamePath();
   NSString* depsPath = ZDDepsPath();
+  NSString* runtimePath = ZDRuntimePath();
   NSString* configPath = ZDConfigPath();
   NSString* homePath = [basePath stringByAppendingPathComponent:@"home"];
   NSString* cachePath = [basePath stringByAppendingPathComponent:@"cache"];
@@ -92,6 +98,7 @@ static void ZDEnsureFilesystemLayout(void) {
   ZDEnsureDirectory(gamePath);
   ZDEnsureDirectory(depsPath);
   ZDEnsureDirectory(configPath);
+  ZDEnsureDirectory(runtimePath);
   ZDEnsureDirectory(homePath);
   ZDEnsureDirectory(cachePath);
   ZDEnsureDirectory(jarsPath);
@@ -99,7 +106,8 @@ static void ZDEnsureFilesystemLayout(void) {
   NSString* readmePath = [basePath stringByAppendingPathComponent:@"README.txt"];
   NSString* readmeText =
       @"Copy game files to ./game\n"
-      "Copy dependencies to ./deps (jre, libs, jars)\n"
+      "Copy dependencies to ./deps (libs, jars)\n"
+      "Copy iOS Java runtime (Mach-O) to ./runtime\n"
       "Optional config files in ./config: main_class.txt, jvm_args.txt, app_args.txt\n";
   ZDWriteFileIfMissing(readmePath, readmeText);
 }
@@ -118,6 +126,7 @@ static NSString* ZDFilesystemStatus(void) {
     ZDDirectoryStateLine(ZDGamePath()),
     ZDDirectoryStateLine(ZDDepsPath()),
     ZDDirectoryStateLine(ZDConfigPath()),
+    ZDDirectoryStateLine(ZDRuntimePath()),
     ZDDirectoryStateLine([ZDBasePath() stringByAppendingPathComponent:@"home"]),
     ZDDirectoryStateLine([ZDBasePath() stringByAppendingPathComponent:@"cache"]),
   ];
@@ -359,6 +368,46 @@ static BOOL ZDIsLikelyMachOFile(NSString* path) {
   }
 }
 
+static NSArray<NSString*>* ZDJvmCandidatePaths(void) {
+  return @[
+    [ZDRuntimePath() stringByAppendingPathComponent:@"lib/server/libjvm.dylib"],
+    [ZDRuntimePath() stringByAppendingPathComponent:@"lib/libjvm.dylib"],
+    [ZDDepsPath() stringByAppendingPathComponent:@"jre/lib/server/libjvm.dylib"],
+    [ZDDepsPath() stringByAppendingPathComponent:@"jre/lib/server/libjvm.so"],
+  ];
+}
+
+static NSString* ZDFindJvmLibraryPath(NSMutableArray<NSString*>* lines) {
+  for (NSString* candidate in ZDJvmCandidatePaths()) {
+    if (!ZDFileExists(candidate)) {
+      continue;
+    }
+    NSString* magic = ZDReadMagicHex4(candidate);
+    if (ZDIsLikelyMachOFile(candidate)) {
+      if (lines != nil) {
+        [lines addObject:[NSString stringWithFormat:@"[ok] JVM candidate accepted: %@ (magic=%@)", candidate, magic]];
+      }
+      return candidate;
+    }
+    if (lines != nil) {
+      [lines addObject:[NSString stringWithFormat:@"[warn] JVM candidate rejected (not Mach-O): %@ (magic=%@)", candidate, magic]];
+    }
+  }
+  return nil;
+}
+
+static NSString* ZDRuntimeReadinessSummary(void) {
+  NSMutableArray<NSString*>* lines = [NSMutableArray array];
+  NSString* jvmPath = ZDFindJvmLibraryPath(lines);
+  if (jvmPath == nil) {
+    [lines addObject:[NSString stringWithFormat:@"runtimeDir=%@", ZDRuntimePath()]];
+    [lines addObject:@"status=missing_valid_macho_jvm"];
+  } else {
+    [lines addObject:@"status=ready"];
+  }
+  return [lines componentsJoinedByString:@"\n"];
+}
+
 static BOOL ZDClearDirectoryContents(NSString* directoryPath, NSError** error) {
   NSFileManager* fileManager = [NSFileManager defaultManager];
   [fileManager createDirectoryAtPath:directoryPath
@@ -543,12 +592,14 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   NSString* linuxLibPath = [depsPath stringByAppendingPathComponent:@"libs/linux-x86_64"];
   NSString* javaLibPathLwjgl = [depsPath stringByAppendingPathComponent:@"libs/android-arm64-v8a/lwjgl-3.3.6"];
   NSString* javaLibPathFmod = [depsPath stringByAppendingPathComponent:@"libs/android-arm64-v8a/fmod-2.02.24"];
-  NSString* jreLibPath = [depsPath stringByAppendingPathComponent:@"jre/lib/server/libjvm.dylib"];
-  NSString* jreLibPathSo = [depsPath stringByAppendingPathComponent:@"jre/lib/server/libjvm.so"];
+  NSString* runtimeLibPath = [runtimePath stringByAppendingPathComponent:@"lib"];
+  NSString* runtimeServerLibPath = [runtimeLibPath stringByAppendingPathComponent:@"server"];
   NSString* linkerLibPath = [frameworksPath stringByAppendingPathComponent:@"libzomdroidlinker.dylib"];
-  NSString* librarySearchPath = [NSString stringWithFormat:@"%@:%@:%@:%@",
+  NSString* librarySearchPath = [NSString stringWithFormat:@"%@:%@:%@:%@:%@:%@",
                                  frameworksPath,
                                  linuxLibPath,
+                                 runtimeLibPath,
+                                 runtimeServerLibPath,
                                  [depsPath stringByAppendingPathComponent:@"jre/lib"],
                                  [depsPath stringByAppendingPathComponent:@"jre/lib/server"]];
 
@@ -598,20 +649,10 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   ZDSetEnv(@"ZOMDROID_RENDERER", @"GL4ES");
   ZDSetEnv(@"ZOMDROID_LIBRARY_DIR", librarySearchPath);
   ZDSetEnv(@"ZOMDROID_LINKER_LIB", linkerLibPath);
-  NSString* selectedJvmPath = nil;
-  if (ZDFileExists(jreLibPath)) {
-    selectedJvmPath = jreLibPath;
-  } else if (ZDFileExists(jreLibPathSo)) {
-    selectedJvmPath = jreLibPathSo;
-  }
+  NSString* selectedJvmPath = ZDFindJvmLibraryPath(lines);
   if (selectedJvmPath == nil) {
-    [lines addObject:[NSString stringWithFormat:@"[error] Missing JVM library: %@ (or libjvm.so)", jreLibPath]];
-    return [lines componentsJoinedByString:@"\n"];
-  }
-  NSString* jvmMagic = ZDReadMagicHex4(selectedJvmPath);
-  if (!ZDIsLikelyMachOFile(selectedJvmPath)) {
-    [lines addObject:[NSString stringWithFormat:@"[error] JVM binary is not iOS Mach-O: %@ (magic=%@)", selectedJvmPath, jvmMagic]];
-    [lines addObject:@"[hint] Current file looks like Linux ELF. Use iOS arm64 Mach-O libjvm to avoid crash."];
+    [lines addObject:@"[error] Missing valid iOS JVM (Mach-O libjvm.dylib)."];
+    [lines addObject:[NSString stringWithFormat:@"[hint] Import runtime folder to %@", runtimePath]];
     return [lines componentsJoinedByString:@"\n"];
   }
   ZDSetEnv(@"ZOMDROID_JVM_LIB", selectedJvmPath);
@@ -680,7 +721,11 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   NSMutableArray<NSString*>* jvmArgs = [NSMutableArray array];
   [jvmArgs addObject:[NSString stringWithFormat:@"-Duser.home=%@", homePath]];
   [jvmArgs addObject:[NSString stringWithFormat:@"-Djava.io.tmpdir=%@", cachePath]];
-  [jvmArgs addObject:[NSString stringWithFormat:@"-Djava.library.path=%@:%@:.", javaLibPathLwjgl, javaLibPathFmod]];
+  [jvmArgs addObject:[NSString stringWithFormat:@"-Djava.library.path=%@:%@:%@:%@:.",
+                                                runtimeLibPath,
+                                                runtimeServerLibPath,
+                                                javaLibPathLwjgl,
+                                                javaLibPathFmod]];
   [jvmArgs addObject:[NSString stringWithFormat:@"-Djava.class.path=%@", classPath]];
   [jvmArgs addObject:@"-Dorg.lwjgl.opengl.libname=libGL.so.1"];
   [jvmArgs addObject:@"-Dzomdroid.renderer=GL4ES"];
@@ -748,6 +793,7 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
 @property(nonatomic, strong) UIButton* launchButton;
 @property(nonatomic, strong) UIButton* importGameButton;
 @property(nonatomic, strong) UIButton* importDepsButton;
+@property(nonatomic, strong) UIButton* importRuntimeButton;
 @property(nonatomic, strong) UIViewController* rootViewController;
 @property(nonatomic, assign) ZDImportTarget pendingImportTarget;
 @end
@@ -767,6 +813,7 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   self.launchButton.enabled = enabled;
   self.importGameButton.enabled = enabled;
   self.importDepsButton.enabled = enabled;
+  self.importRuntimeButton.enabled = enabled;
 }
 
 - (void)presentFolderPickerForTarget:(ZDImportTarget)target {
@@ -787,6 +834,11 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
 - (void)onImportDepsTapped {
   [self appendStatus:@"Select DEPS folder in Files..."];
   [self presentFolderPickerForTarget:ZDImportTargetDeps];
+}
+
+- (void)onImportRuntimeTapped {
+  [self appendStatus:@"Select RUNTIME folder in Files (must contain Mach-O libjvm.dylib)..."];
+  [self presentFolderPickerForTarget:ZDImportTargetRuntime];
 }
 
 - (void)onLaunchTapped {
@@ -828,6 +880,9 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   } else if (target == ZDImportTargetDeps) {
     targetPath = ZDDepsPath();
     targetLabel = @"deps";
+  } else if (target == ZDImportTargetRuntime) {
+    targetPath = ZDRuntimePath();
+    targetLabel = @"runtime";
   }
   if (targetPath == nil) {
     [self appendStatus:@"[error] Unknown import target"];
@@ -843,6 +898,9 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
     dispatch_async(dispatch_get_main_queue(), ^{
       if (ok) {
         [self appendStatus:[importLines componentsJoinedByString:@"\n"]];
+        if (target == ZDImportTargetRuntime) {
+          [self appendStatus:[NSString stringWithFormat:@"Runtime readiness:\n%@", ZDRuntimeReadinessSummary()]];
+        }
       } else {
         NSString* errorText = importError.localizedDescription ?: @"unknown import error";
         [self appendStatus:[NSString stringWithFormat:@"[error] Import %@ failed: %@", targetLabel, errorText]];
@@ -892,6 +950,13 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   [importDepsButton addTarget:self action:@selector(onImportDepsTapped) forControlEvents:UIControlEventTouchUpInside];
   self.importDepsButton = importDepsButton;
 
+  UIButton* importRuntimeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+  importRuntimeButton.translatesAutoresizingMaskIntoConstraints = NO;
+  importRuntimeButton.titleLabel.font = [UIFont systemFontOfSize:16 weight:UIFontWeightSemibold];
+  [importRuntimeButton setTitle:@"Import Runtime Folder" forState:UIControlStateNormal];
+  [importRuntimeButton addTarget:self action:@selector(onImportRuntimeTapped) forControlEvents:UIControlEventTouchUpInside];
+  self.importRuntimeButton = importRuntimeButton;
+
   UITextView* statusView = [UITextView new];
   statusView.translatesAutoresizingMaskIntoConstraints = NO;
   statusView.editable = NO;
@@ -903,6 +968,7 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   [rootViewController.view addSubview:titleLabel];
   [rootViewController.view addSubview:importGameButton];
   [rootViewController.view addSubview:importDepsButton];
+  [rootViewController.view addSubview:importRuntimeButton];
   [rootViewController.view addSubview:launchButton];
   [rootViewController.view addSubview:statusView];
 
@@ -919,7 +985,10 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
     [importDepsButton.topAnchor constraintEqualToAnchor:importGameButton.bottomAnchor constant:10.0],
     [importDepsButton.centerXAnchor constraintEqualToAnchor:guide.centerXAnchor],
 
-    [launchButton.topAnchor constraintEqualToAnchor:importDepsButton.bottomAnchor constant:12.0],
+    [importRuntimeButton.topAnchor constraintEqualToAnchor:importDepsButton.bottomAnchor constant:10.0],
+    [importRuntimeButton.centerXAnchor constraintEqualToAnchor:guide.centerXAnchor],
+
+    [launchButton.topAnchor constraintEqualToAnchor:importRuntimeButton.bottomAnchor constant:12.0],
     [launchButton.centerXAnchor constraintEqualToAnchor:guide.centerXAnchor],
 
     [statusView.topAnchor constraintEqualToAnchor:launchButton.bottomAnchor constant:12.0],
@@ -930,16 +999,19 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
 
   ZDEnsureFilesystemLayout();
   NSString* runtimeStatus = ZDProbeRuntimeLibraries();
+  NSString* runtimeReadiness = ZDRuntimeReadinessSummary();
   NSString* documentsPath = ZDDocumentsPath();
   NSString* filesystemStatus = ZDFilesystemStatus();
   NSString* intro = [NSString stringWithFormat:
-                     @"Documents=%@\nUse Import Game Folder / Import Deps Folder first.\n\nFilesystem status:\n%@\n\nRuntime probe:\n%@\n\nExpected paths:\n- %@\n- %@\n- %@",
+                     @"Documents=%@\nUse Import Game / Deps / Runtime before Launch.\n\nFilesystem status:\n%@\n\nRuntime readiness:\n%@\n\nRuntime probe:\n%@\n\nExpected paths:\n- %@\n- %@\n- %@\n- %@",
                      documentsPath,
                      filesystemStatus,
+                     runtimeReadiness,
                      runtimeStatus,
                      ZDGamePath(),
                      ZDDepsPath(),
-                     ZDConfigPath()];
+                     ZDConfigPath(),
+                     ZDRuntimePath()];
   self.statusView.text = intro;
 
   self.window.rootViewController = rootViewController;
