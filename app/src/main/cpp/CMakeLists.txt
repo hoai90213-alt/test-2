@@ -61,7 +61,7 @@ if(ZOMDROID_BUILD_LINKER)
         target_link_libraries(zomdroidlinker PRIVATE c log box64 zomdroid) # link to libc before box64 to prevent mmap override
         target_link_options(zomdroidlinker PRIVATE "-Wl,-z,global")
     elseif(APPLE)
-        target_link_libraries(zomdroidlinker PRIVATE c box64 zomdroid)
+        target_link_libraries(zomdroidlinker PRIVATE box64 zomdroid)
     else()
         target_link_libraries(zomdroidlinker PRIVATE c dl box64 zomdroid)
     endif()
