@@ -97,6 +97,26 @@ static void ZDEnsureFilesystemLayout(void) {
   ZDWriteFileIfMissing(readmePath, readmeText);
 }
 
+static NSString* ZDDirectoryStateLine(NSString* path) {
+  BOOL isDir = NO;
+  BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDir];
+  return [NSString stringWithFormat:@"%@ => %@",
+                                    path,
+                                    (exists && isDir) ? @"ok" : @"missing"];
+}
+
+static NSString* ZDFilesystemStatus(void) {
+  NSArray<NSString*>* lines = @[
+    ZDDirectoryStateLine(ZDBasePath()),
+    ZDDirectoryStateLine(ZDGamePath()),
+    ZDDirectoryStateLine(ZDDepsPath()),
+    ZDDirectoryStateLine(ZDConfigPath()),
+    ZDDirectoryStateLine([ZDBasePath() stringByAppendingPathComponent:@"home"]),
+    ZDDirectoryStateLine([ZDBasePath() stringByAppendingPathComponent:@"cache"]),
+  ];
+  return [lines componentsJoinedByString:@"\n"];
+}
+
 static NSArray<NSString*>* ZDReadLines(NSString* path) {
   if (!ZDFileExists(path)) {
     return @[];
@@ -400,6 +420,8 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
 - (void)onLaunchTapped {
   self.launchButton.enabled = NO;
   [self appendStatus:@"Launching runtime..."];
+  ZDEnsureFilesystemLayout();
+  [self appendStatus:[NSString stringWithFormat:@"Filesystem status:\n%@", ZDFilesystemStatus()]];
 
   dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
     NSString* launchResult = ZDPrepareAndLaunchRuntime();
@@ -462,10 +484,14 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
     [statusView.bottomAnchor constraintEqualToAnchor:guide.bottomAnchor constant:-12.0],
   ]];
 
-  NSString* runtimeStatus = ZDProbeRuntimeLibraries();
   ZDEnsureFilesystemLayout();
+  NSString* runtimeStatus = ZDProbeRuntimeLibraries();
+  NSString* documentsPath = ZDDocumentsPath();
+  NSString* filesystemStatus = ZDFilesystemStatus();
   NSString* intro = [NSString stringWithFormat:
-                     @"Runtime probe:\n%@\n\nExpected paths:\n- %@\n- %@\n- %@",
+                     @"Documents=%@\n\nFilesystem status:\n%@\n\nRuntime probe:\n%@\n\nExpected paths:\n- %@\n- %@\n- %@",
+                     documentsPath,
+                     filesystemStatus,
                      runtimeStatus,
                      ZDGamePath(),
                      ZDDepsPath(),
