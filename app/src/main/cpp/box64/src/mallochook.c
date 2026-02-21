@@ -7,6 +7,7 @@
 #include <sys/mman.h>
 #include <dlfcn.h>
 #include <malloc.h>
+#include <math.h>
 #if defined(__APPLE__)
 #include <malloc/malloc.h>
 #include <unistd.h>
@@ -36,6 +37,14 @@ static inline size_t box64_apple_pagesize(void)
     if (pagesize <= 0)
         pagesize = 4096;
     return (size_t)pagesize;
+}
+
+#ifdef isinff
+#undef isinff
+#endif
+EXPORT int isinff(float value)
+{
+	return isinf((double)value);
 }
 
 EXPORT void* __libc_malloc(size_t size)
