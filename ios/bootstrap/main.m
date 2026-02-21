@@ -586,6 +586,7 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   NSString* frameworksPath = ZDFrameworksPath();
   NSString* gamePath = ZDGamePath();
   NSString* depsPath = ZDDepsPath();
+  NSString* runtimePath = ZDRuntimePath();
   NSString* configPath = ZDConfigPath();
   NSString* homePath = [ZDBasePath() stringByAppendingPathComponent:@"home"];
   NSString* cachePath = [ZDBasePath() stringByAppendingPathComponent:@"cache"];
