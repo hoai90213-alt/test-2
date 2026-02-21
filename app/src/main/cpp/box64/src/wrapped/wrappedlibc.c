@@ -131,6 +131,7 @@ typedef void* (*pFpip_t)(void*, int, void*);
 #define scandir64 scandir
 #define ftw64 ftw
 #define nftw64 nftw
+#define execvpe execve
 #endif
 
 static int regs_abi[] = {_DI, _SI, _DX, _CX, _R8, _R9};
@@ -4100,6 +4101,7 @@ __attribute__((weak)) uint32_t arc4random()
     return;     // do not unload...
 
 #if defined(BOX64_APPLE_STAT64_REMAP)
+#undef execvpe
 #undef nftw64
 #undef ftw64
 #undef scandir64
