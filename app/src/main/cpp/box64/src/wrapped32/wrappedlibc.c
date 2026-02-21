@@ -645,6 +645,9 @@ int EXPORT my32_uname(struct utsname *buf)
 #ifndef O_TMPFILE
 #define O_TMPFILE (020000000 | O_DIRECTORY)
 #endif
+#ifndef O_RSYNC
+#define O_RSYNC O_SYNC
+#endif
 #ifndef O_PATH
 #define O_PATH     010000000
 #endif

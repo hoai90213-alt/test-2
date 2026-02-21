@@ -596,6 +596,9 @@ int EXPORT my_uname(struct utsname *buf)
 #ifndef O_TMPFILE
 #define O_TMPFILE (020000000 | O_DIRECTORY)
 #endif
+#ifndef O_RSYNC
+#define O_RSYNC O_SYNC
+#endif
 
 #ifndef FMODE_EXEC
 #define FMODE_EXEC 0x20

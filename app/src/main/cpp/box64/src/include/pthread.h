@@ -110,6 +110,73 @@ static inline int pthread_condattr_setclock(pthread_condattr_t* attr, clockid_t 
     errno = ENOSYS;
     return -1;
 }
+
+#ifndef PTHREAD_BARRIER_SERIAL_THREAD
+#define PTHREAD_BARRIER_SERIAL_THREAD 1
+
+typedef struct {
+    int __opaque;
+} pthread_barrier_t;
+
+typedef struct {
+    int __opaque;
+} pthread_barrierattr_t;
+
+static inline int pthread_barrierattr_init(pthread_barrierattr_t* attr)
+{
+    (void)attr;
+    errno = ENOSYS;
+    return -1;
+}
+
+static inline int pthread_barrierattr_destroy(pthread_barrierattr_t* attr)
+{
+    (void)attr;
+    errno = ENOSYS;
+    return -1;
+}
+
+static inline int pthread_barrierattr_getpshared(const pthread_barrierattr_t* attr, int* pshared)
+{
+    (void)attr;
+    if (pshared) {
+        *pshared = 0;
+    }
+    errno = ENOSYS;
+    return -1;
+}
+
+static inline int pthread_barrierattr_setpshared(pthread_barrierattr_t* attr, int pshared)
+{
+    (void)attr;
+    (void)pshared;
+    errno = ENOSYS;
+    return -1;
+}
+
+static inline int pthread_barrier_init(pthread_barrier_t* barrier, const pthread_barrierattr_t* attr, unsigned count)
+{
+    (void)barrier;
+    (void)attr;
+    (void)count;
+    errno = ENOSYS;
+    return -1;
+}
+
+static inline int pthread_barrier_destroy(pthread_barrier_t* barrier)
+{
+    (void)barrier;
+    errno = ENOSYS;
+    return -1;
+}
+
+static inline int pthread_barrier_wait(pthread_barrier_t* barrier)
+{
+    (void)barrier;
+    errno = ENOSYS;
+    return -1;
+}
+#endif
 #endif
 #endif
 
