@@ -44,8 +44,22 @@ static vFpi_t real_pthread_cleanup_pop_restore = NULL;
 // it will be pthread_kill@GLIBC_2.0+, need to be found, while it's GLIBC_2.0 on i386
 static iFLi_t real_phtread_kill_old = NULL;
 // those function can be used simply
+#if defined(__APPLE__)
+static void _pthread_cleanup_push(void* buffer, void* routine, void* arg)
+{
+	(void)buffer;
+	(void)routine;
+	(void)arg;
+}
+static void _pthread_cleanup_pop(void* buffer, int exec)
+{
+	(void)buffer;
+	(void)exec;
+}
+#else
 void _pthread_cleanup_push(void* buffer, void* routine, void* arg);	// declare hidden functions
 void _pthread_cleanup_pop(void* buffer, int exec);
+#endif
 
 typedef struct threadstack_s {
 	void* 	stack;
@@ -782,7 +796,11 @@ EXPORT int my32_pthread_attr_setscope(x64emu_t* emu, void* attr, int scope)
 #ifndef ANDROID
 EXPORT void my32__pthread_cleanup_push_defer(x64emu_t* emu, void* buffer, void* routine, void* arg)
 {
-	real_pthread_cleanup_push_defer(buffer, findcleanup_routineFct(routine), arg);
+	(void)emu;
+	if(real_pthread_cleanup_push_defer)
+		real_pthread_cleanup_push_defer(buffer, findcleanup_routineFct(routine), arg);
+	else
+		_pthread_cleanup_push(buffer, findcleanup_routineFct(routine), arg);
 }
 
 EXPORT void my32__pthread_cleanup_push(x64emu_t* emu, void* buffer, void* routine, void* arg)
@@ -792,7 +810,11 @@ EXPORT void my32__pthread_cleanup_push(x64emu_t* emu, void* buffer, void* routin
 
 EXPORT void my32__pthread_cleanup_pop_restore(x64emu_t* emu, void* buffer, int exec)
 {
-	real_pthread_cleanup_pop_restore(buffer, exec);
+	(void)emu;
+	if(real_pthread_cleanup_pop_restore)
+		real_pthread_cleanup_pop_restore(buffer, exec);
+	else
+		_pthread_cleanup_pop(buffer, exec);
 }
 
 EXPORT void my32__pthread_cleanup_pop(x64emu_t* emu, void* buffer, int exec)

@@ -47,8 +47,22 @@ typedef int (*iFli_t)(long unsigned int, int);
 static vFppp_t real_pthread_cleanup_push_defer = NULL;
 static vFpi_t real_pthread_cleanup_pop_restore = NULL;
 static iFppip_t real_pthread_cond_clockwait = NULL;
+#if defined(__APPLE__)
+static void _pthread_cleanup_push(void* buffer, void* routine, void* arg)
+{
+	(void)buffer;
+	(void)routine;
+	(void)arg;
+}
+static void _pthread_cleanup_pop(void* buffer, int exec)
+{
+	(void)buffer;
+	(void)exec;
+}
+#else
 void _pthread_cleanup_push(void* buffer, void* routine, void* arg);	// declare hidden functions
 void _pthread_cleanup_pop(void* buffer, int exec);
+#endif
 // with glibc 2.34+, pthread_kill changed behaviour and might break some program, so using old version if possible
 // it will be pthread_kill@GLIBC_2.17 on aarch64, but it's GLIBC_2.2.5 on x86_64
 static iFli_t real_phtread_kill_old = NULL;
@@ -776,7 +790,10 @@ EXPORT int my_pthread_cond_clockwait(x64emu_t *emu, pthread_cond_t* cond, void* 
 EXPORT void my__pthread_cleanup_push_defer(x64emu_t* emu, void* buffer, void* routine, void* arg)
 {
     (void)emu;
-	real_pthread_cleanup_push_defer(buffer, findcleanup_routineFct(routine), arg);
+	if(real_pthread_cleanup_push_defer)
+		real_pthread_cleanup_push_defer(buffer, findcleanup_routineFct(routine), arg);
+	else
+		_pthread_cleanup_push(buffer, findcleanup_routineFct(routine), arg);
 }
 
 EXPORT void my__pthread_cleanup_push(x64emu_t* emu, void* buffer, void* routine, void* arg)
@@ -788,7 +805,10 @@ EXPORT void my__pthread_cleanup_push(x64emu_t* emu, void* buffer, void* routine,
 EXPORT void my__pthread_cleanup_pop_restore(x64emu_t* emu, void* buffer, int exec)
 {
     (void)emu;
-	real_pthread_cleanup_pop_restore(buffer, exec);
+	if(real_pthread_cleanup_pop_restore)
+		real_pthread_cleanup_pop_restore(buffer, exec);
+	else
+		_pthread_cleanup_pop(buffer, exec);
 }
 
 EXPORT void my__pthread_cleanup_pop(x64emu_t* emu, void* buffer, int exec)
