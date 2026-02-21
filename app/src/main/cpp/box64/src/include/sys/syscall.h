@@ -31,6 +31,8 @@
 #ifndef __NR_modify_ldt
 #define __NR_modify_ldt SYS_modify_ldt
 #endif
+
+long syscall(long number, ...);
 #endif
 
 #endif

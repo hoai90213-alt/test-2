@@ -5,6 +5,14 @@
 #include_next <sys/vfs.h>
 #else
 #include <sys/mount.h>
+
+#ifndef statfs64
+#define statfs64 statfs
+#endif
+
+#ifndef fstatfs64
+#define fstatfs64 fstatfs
+#endif
 #endif
 
 #endif
