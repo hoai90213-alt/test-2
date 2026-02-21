@@ -118,8 +118,15 @@ typedef void* (*pFpip_t)(void*, int, void*);
 #define fstat64 fstat
 #define fstatat64 fstatat
 #define open64 open
+#define fopen64 fopen
 #define lseek64 lseek
 #define mkstemp64 mkstemp
+#define readdir64 readdir
+#define dirent64 dirent
+#define glob64 glob
+#define scandir64 scandir
+#define ftw64 ftw
+#define nftw64 nftw
 #endif
 
 static int regs_abi[] = {_DI, _SI, _DX, _CX, _R8, _R9};
@@ -4079,8 +4086,15 @@ __attribute__((weak)) uint32_t arc4random()
     return;     // do not unload...
 
 #if defined(BOX64_APPLE_STAT64_REMAP)
+#undef nftw64
+#undef ftw64
+#undef scandir64
+#undef glob64
+#undef dirent64
+#undef readdir64
 #undef mkstemp64
 #undef lseek64
+#undef fopen64
 #undef open64
 #undef fstatat64
 #undef fstat64

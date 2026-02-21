@@ -120,8 +120,21 @@
 #define fstat64 fstat
 #define fstatat64 fstatat
 #define open64 open
+#define fopen64 fopen
 #define lseek64 lseek
 #define mkstemp64 mkstemp
+#define mkstemps64 mkstemps
+#define readdir64 readdir
+#define dirent64 dirent
+#define glob64 glob
+#define scandir64 scandir
+#define ftw64 ftw
+#define nftw64 nftw
+#define fstatfs64 fstatfs
+#define statfs64 statfs
+#define alphasort64 alphasort
+#define getrlimit64 getrlimit
+#define setrlimit64 setrlimit
 #endif
 
 #define MY32_F_GETLK    5
@@ -3409,8 +3422,21 @@ void libc32_net_init();
     my32_stderr = to_ptrv(my__IO_2_1_stderr_);
 
 #if defined(BOX64_APPLE_STAT64_REMAP)
+#undef setrlimit64
+#undef getrlimit64
+#undef alphasort64
+#undef statfs64
+#undef fstatfs64
+#undef nftw64
+#undef ftw64
+#undef scandir64
+#undef glob64
+#undef dirent64
+#undef readdir64
+#undef mkstemps64
 #undef mkstemp64
 #undef lseek64
+#undef fopen64
 #undef open64
 #undef fstatat64
 #undef fstat64
