@@ -1,6 +1,7 @@
 #include <string.h>
 #if defined(__APPLE__)
 #include <malloc/malloc.h>
+#include <libkern/OSCacheControl.h>
 #else
 #include <malloc.h>
 #endif
@@ -401,7 +402,11 @@ void* zomdroid_emulation_bridge_jni_symbol(EmulatedLib *lib, uint64_t fn, const 
 
     free(code);
 
+#if defined(__APPLE__)
+    sys_icache_invalidate(mem, (size_t)code_size);
+#else
     __builtin___clear_cache(mem, mem + code_size);
+#endif
 
     return mem;
 }
