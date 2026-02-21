@@ -60,6 +60,13 @@ static inline int pthread_getattr_default_np(pthread_attr_t* attr)
     errno = ENOSYS;
     return -1;
 }
+
+static inline int pthread_setattr_default_np(const pthread_attr_t* attr)
+{
+    (void)attr;
+    errno = ENOSYS;
+    return -1;
+}
 #endif
 #endif
 
