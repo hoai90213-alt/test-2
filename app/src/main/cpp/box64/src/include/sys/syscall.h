@@ -23,6 +23,14 @@
 #define SYS_modify_ldt 154
 #endif
 #endif
+
+#ifndef __NR_gettid
+#define __NR_gettid SYS_gettid
+#endif
+
+#ifndef __NR_modify_ldt
+#define __NR_modify_ldt SYS_modify_ldt
+#endif
 #endif
 
 #endif
