@@ -9,6 +9,10 @@
 #include <syscall.h>
 #include <sys/personality.h>
 
+#ifndef RTLD_NEXT
+#define RTLD_NEXT ((void*)-1L)
+#endif
+
 #include "box64context.h"
 #include "elfloader.h"
 #include "debug.h"
