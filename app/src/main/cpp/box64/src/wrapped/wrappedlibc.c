@@ -1659,7 +1659,12 @@ EXPORT int my_sysctl(x64emu_t* emu, int* name, int nlen, void* oldval, size_t* o
 EXPORT void my_tdestroy(x64emu_t* emu, void* root, void* fnc)
 {
     (void)emu;
+#if defined(__APPLE__)
+    (void)root;
+    (void)fnc;
+#else
     tdestroy(root, findfreeFct(fnc));
+#endif
 }
 EXPORT void* my_tdelete(x64emu_t* emu, void* key, void** root, void* fnc)
 {
