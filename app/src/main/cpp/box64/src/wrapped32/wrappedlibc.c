@@ -46,6 +46,10 @@
 #endif
 #include <sys/wait.h>
 
+#if defined(__APPLE__)
+extern char** environ;
+#endif
+
 #include "wrappedlibs.h"
 
 #include "box64stack.h"

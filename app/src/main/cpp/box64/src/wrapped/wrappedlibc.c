@@ -45,6 +45,10 @@
 #undef LOG_INFO
 #undef LOG_DEBUG
 
+#if defined(__APPLE__)
+extern char** environ;
+#endif
+
 #include "wrappedlibs.h"
 
 #include "box64stack.h"
