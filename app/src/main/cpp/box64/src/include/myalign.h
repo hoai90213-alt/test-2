@@ -238,7 +238,7 @@ typedef struct jump_buff_x64_s {
 typedef struct __jmp_buf_tag_s {
     jump_buff_x64_t __jmpbuf;
     int              __mask_was_saved;
-    #ifdef ANDROID
+    #if defined(ANDROID) || defined(__APPLE__)
     sigset_t         __saved_mask;
     #else
     __sigset_t       __saved_mask;
