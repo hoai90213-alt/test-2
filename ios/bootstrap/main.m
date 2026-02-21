@@ -178,22 +178,27 @@ static NSString* ZDResolveGameRoot(NSString* baseGamePath,
     return baseGamePath;
   }
 
-  NSError* error = nil;
-  NSArray<NSString*>* entries = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:baseGamePath error:&error];
-  if (entries == nil || error != nil) {
-    return nil;
-  }
-
-  for (NSString* entry in entries) {
-    NSString* candidate = [baseGamePath stringByAppendingPathComponent:entry];
-    BOOL isDir = NO;
-    if (![[NSFileManager defaultManager] fileExistsAtPath:candidate isDirectory:&isDir] || !isDir) {
+  NSDirectoryEnumerator<NSString*>* enumerator =
+      [[NSFileManager defaultManager] enumeratorAtPath:baseGamePath];
+  for (NSString* relativePath in enumerator) {
+    if (![relativePath hasSuffix:classFileRelativePath]) {
       continue;
     }
-    NSString* nestedClassFile = [candidate stringByAppendingPathComponent:classFileRelativePath];
-    if (ZDFileExists(nestedClassFile)) {
-      [lines addObject:[NSString stringWithFormat:@"[ok] Auto-detected nested game root: %@", candidate]];
-      return candidate;
+
+    NSString* candidateRoot = baseGamePath;
+    if (relativePath.length > classFileRelativePath.length) {
+      NSUInteger prefixLength = relativePath.length - classFileRelativePath.length;
+      NSString* prefix = [relativePath substringToIndex:prefixLength];
+      prefix = [prefix stringByTrimmingCharactersInSet:[NSCharacterSet characterSetWithCharactersInString:@"/"]];
+      if (prefix.length > 0) {
+        candidateRoot = [baseGamePath stringByAppendingPathComponent:prefix];
+      }
+    }
+
+    NSString* candidateClassFile = [candidateRoot stringByAppendingPathComponent:classFileRelativePath];
+    if (ZDFileExists(candidateClassFile)) {
+      [lines addObject:[NSString stringWithFormat:@"[ok] Auto-detected game root: %@", candidateRoot]];
+      return candidateRoot;
     }
   }
 
@@ -369,6 +374,15 @@ static NSString* ZDPrepareAndLaunchRuntime(void) {
   }
   if (!ZDFileExists(mainClassFile)) {
     [lines addObject:[NSString stringWithFormat:@"[error] Missing main class file: %@", mainClassFile]];
+    NSError* listError = nil;
+    NSArray<NSString*>* gameEntries = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:gamePath error:&listError];
+    if (gameEntries != nil && listError == nil && gameEntries.count > 0) {
+      NSUInteger previewCount = gameEntries.count < 8 ? gameEntries.count : 8;
+      NSArray<NSString*>* preview = [gameEntries subarrayWithRange:NSMakeRange(0, previewCount)];
+      [lines addObject:[NSString stringWithFormat:@"[debug] game entries (%lu total): %@",
+                                                  (unsigned long)gameEntries.count,
+                                                  [preview componentsJoinedByString:@", "]]];
+    }
     [lines addObject:@"Hint: if you copied the whole folder, keep contents directly in game/ or let app auto-detect one nested folder."];
     return [lines componentsJoinedByString:@"\n"];
   }
