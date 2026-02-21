@@ -44,7 +44,14 @@ EXPORT void* mmap64(void *addr, unsigned long length, int prot, int flags, int f
         setProtection((uintptr_t)ret, length, prot);
     return ret;
 }
+#if defined(__APPLE__)
+EXPORT void* mmap(void *addr, unsigned long length, int prot, int flags, int fd, ssize_t offset)
+{
+    return mmap64(addr, length, prot, flags, fd, offset);
+}
+#else
 EXPORT void* mmap(void *addr, unsigned long length, int prot, int flags, int fd, ssize_t offset) __attribute__((alias("mmap64")));
+#endif
 
 EXPORT int munmap(void* addr, unsigned long length)
 {
