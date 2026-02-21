@@ -11,14 +11,22 @@
 
 typedef long Lmid_t;
 
+#ifndef ElfW
+#if __SIZEOF_POINTER__ == 8
+#define ElfW(type) Elf64_##type
+#else
+#define ElfW(type) Elf32_##type
+#endif
+#endif
+
 #ifndef RTLD_DI_LINKMAP
 #define RTLD_DI_LINKMAP 2
 #endif
 
 struct link_map {
-    Elf64_Addr l_addr;
+    ElfW(Addr) l_addr;
     char* l_name;
-    Elf64_Dyn* l_ld;
+    ElfW(Dyn)* l_ld;
     struct link_map* l_next;
     struct link_map* l_prev;
 };
@@ -26,7 +34,7 @@ struct link_map {
 struct dl_phdr_info {
     uintptr_t dlpi_addr;
     const char* dlpi_name;
-    const Elf64_Phdr* dlpi_phdr;
+    const ElfW(Phdr)* dlpi_phdr;
     uint16_t dlpi_phnum;
 };
 

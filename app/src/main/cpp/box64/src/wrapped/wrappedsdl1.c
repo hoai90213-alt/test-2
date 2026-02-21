@@ -26,14 +26,25 @@ const char* sdl1Name = "libSDL-1.2.so.0";
 
 int sdl_Yes() { return 1; }
 int sdl_No() { return 0; }
-int EXPORT my_SDL_Has3DNow() __attribute__((alias("sdl_No")));
-int EXPORT my_SDL_Has3DNowExt() __attribute__((alias("sdl_No")));
-int EXPORT my_SDL_HasAltiVec() __attribute__((alias("sdl_No")));
-int EXPORT my_SDL_HasMMX() __attribute__((alias("sdl_Yes")));
-int EXPORT my_SDL_HasMMXExt() __attribute__((alias("sdl_Yes")));
-int EXPORT my_SDL_HasRDTSC() __attribute__((alias("sdl_Yes")));
-int EXPORT my_SDL_HasSSE() __attribute__((alias("sdl_Yes")));
-int EXPORT my_SDL_HasSSE2() __attribute__((alias("sdl_Yes")));
+#if defined(__APPLE__)
+#define SDL_ALIAS_NO(name) int EXPORT name() { return sdl_No(); }
+#define SDL_ALIAS_YES(name) int EXPORT name() { return sdl_Yes(); }
+#else
+#define SDL_ALIAS_NO(name) int EXPORT name() __attribute__((alias("sdl_No")));
+#define SDL_ALIAS_YES(name) int EXPORT name() __attribute__((alias("sdl_Yes")));
+#endif
+
+SDL_ALIAS_NO(my_SDL_Has3DNow)
+SDL_ALIAS_NO(my_SDL_Has3DNowExt)
+SDL_ALIAS_NO(my_SDL_HasAltiVec)
+SDL_ALIAS_YES(my_SDL_HasMMX)
+SDL_ALIAS_YES(my_SDL_HasMMXExt)
+SDL_ALIAS_YES(my_SDL_HasRDTSC)
+SDL_ALIAS_YES(my_SDL_HasSSE)
+SDL_ALIAS_YES(my_SDL_HasSSE2)
+
+#undef SDL_ALIAS_NO
+#undef SDL_ALIAS_YES
 
 typedef struct {
   int32_t freq;
