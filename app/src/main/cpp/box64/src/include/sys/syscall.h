@@ -933,7 +933,9 @@
 #define __NR_writev 20
 #endif
 
+#if !defined(__APPLE__)
 long syscall(long number, ...);
+#endif
 #endif
 
 #endif
