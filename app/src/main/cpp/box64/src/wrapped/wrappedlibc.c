@@ -596,8 +596,26 @@ int EXPORT my_uname(struct utsname *buf)
 #ifndef O_TMPFILE
 #define O_TMPFILE (020000000 | O_DIRECTORY)
 #endif
+#ifndef O_DSYNC
+#define O_DSYNC O_SYNC
+#endif
 #ifndef O_RSYNC
 #define O_RSYNC O_SYNC
+#endif
+#ifndef O_DIRECT
+#define O_DIRECT 0
+#endif
+#ifndef O_LARGEFILE
+#define O_LARGEFILE 0
+#endif
+#ifndef O_NOATIME
+#define O_NOATIME 0
+#endif
+#ifndef O_PATH
+#define O_PATH 0
+#endif
+#ifndef FASYNC
+#define FASYNC 0
 #endif
 
 #ifndef FMODE_EXEC

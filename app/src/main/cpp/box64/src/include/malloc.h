@@ -60,6 +60,7 @@ static inline int malloc_info(int options, FILE* stream)
     return -1;
 }
 
+#if !defined(__APPLE__)
 static inline void* memalign(size_t alignment, size_t size)
 {
     void* ptr = NULL;
@@ -68,6 +69,7 @@ static inline void* memalign(size_t alignment, size_t size)
     }
     return ptr;
 }
+#endif
 #endif
 
 #endif
