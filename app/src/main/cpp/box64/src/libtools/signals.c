@@ -50,6 +50,12 @@
 #define UCTX_RESERVED(P) ((P)->uc_mcontext.__reserved)
 #endif
 
+#if defined(__APPLE__) && defined(ARM64)
+struct fpsimd_context {
+    __uint128_t vregs[32];
+};
+#endif
+
 
 typedef uint64_t x64_gregset_t[23];
 enum
