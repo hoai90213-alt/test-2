@@ -117,6 +117,9 @@ typedef void* (*pFpip_t)(void*, int, void*);
 #define lstat64 lstat
 #define fstat64 fstat
 #define fstatat64 fstatat
+#define open64 open
+#define lseek64 lseek
+#define mkstemp64 mkstemp
 #endif
 
 static int regs_abi[] = {_DI, _SI, _DX, _CX, _R8, _R9};
@@ -4076,6 +4079,9 @@ __attribute__((weak)) uint32_t arc4random()
     return;     // do not unload...
 
 #if defined(BOX64_APPLE_STAT64_REMAP)
+#undef mkstemp64
+#undef lseek64
+#undef open64
 #undef fstatat64
 #undef fstat64
 #undef lstat64

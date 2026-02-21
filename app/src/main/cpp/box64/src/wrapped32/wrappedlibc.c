@@ -119,6 +119,9 @@
 #define lstat64 lstat
 #define fstat64 fstat
 #define fstatat64 fstatat
+#define open64 open
+#define lseek64 lseek
+#define mkstemp64 mkstemp
 #endif
 
 #define MY32_F_GETLK    5
@@ -3406,6 +3409,9 @@ void libc32_net_init();
     my32_stderr = to_ptrv(my__IO_2_1_stderr_);
 
 #if defined(BOX64_APPLE_STAT64_REMAP)
+#undef mkstemp64
+#undef lseek64
+#undef open64
 #undef fstatat64
 #undef fstat64
 #undef lstat64
