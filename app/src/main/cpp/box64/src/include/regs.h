@@ -21,6 +21,19 @@ enum {
 };
 
 
+#if defined(__APPLE__)
+typedef union {
+	int64_t  sq[1];
+	uint64_t q[1];
+	int32_t  sdword[2];
+	uint32_t dword[2];
+	int16_t  sword[4];
+	uint16_t word[4];
+	int8_t   sbyte[8];
+	uint8_t  byte[8];
+} box64_reg64_t;
+#define reg64_t box64_reg64_t
+#else
 typedef union {
 	int64_t  sq[1];
 	uint64_t q[1];
@@ -31,6 +44,7 @@ typedef union {
 	int8_t   sbyte[8];
 	uint8_t  byte[8];
 } reg64_t;
+#endif
 
 typedef enum {
 	ROUND_Nearest = 0,		
