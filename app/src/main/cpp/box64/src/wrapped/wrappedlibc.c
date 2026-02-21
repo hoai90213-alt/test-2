@@ -3423,6 +3423,14 @@ static int my_cookie_close(void *p)
 }
 EXPORT void* my_fopencookie(x64emu_t* emu, void* cookie, void* mode, my_cookie_io_functions_t *s)
 {
+#if defined(__APPLE__)
+    (void)emu;
+    (void)cookie;
+    (void)mode;
+    (void)s;
+    errno = ENOSYS;
+    return NULL;
+#else
     cookie_io_functions_t io_funcs = {s->read?my_cookie_read:NULL, s->write?my_cookie_write:NULL, s->seek?my_cookie_seek:NULL, my_cookie_close};
     my_cookie_t *cb = (my_cookie_t*)box_calloc(1, sizeof(my_cookie_t));
     cb->r = (uintptr_t)s->read;
@@ -3431,6 +3439,7 @@ EXPORT void* my_fopencookie(x64emu_t* emu, void* cookie, void* mode, my_cookie_i
     cb->c = (uintptr_t)s->close;
     cb->cookie = cookie;
     return fopencookie(cb, mode, io_funcs);
+#endif
 }
 #endif
 
